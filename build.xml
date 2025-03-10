@@ -1,0 +1,44 @@
+<project name="Music" default="compile" basedir=".">
+    <!-- Define project properties -->
+    <property name="src.dir" value="src"/>
+    <property name="build.dir" value="build"/>
+    <property name="main.class" value="Conductor"/>
+    
+    <!-- Create song property with default value -->
+    <property name="song" value="songs/MaryHadALittleLamb.txt"/>
+    
+    <!-- Clean target to remove build directory -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+    
+    <!-- Initialize target to create build directory -->
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+    </target>
+    
+    <!-- Compile target to compile source files -->
+    <target name="compile" depends="init">
+        <javac srcdir="${src.dir}" destdir="${build.dir}" includeantruntime="false"/>
+    </target>
+    
+    <!-- Run target that accepts a song parameter -->
+    <target name="run" depends="compile" description="Run the application with specified song">
+        <java classname="${main.class}" fork="true">
+            <classpath>
+                <pathelement path="${build.dir}"/>
+            </classpath>
+            <arg value="${song}"/>
+        </java>
+    </target>
+    
+    <!-- Help target to show usage information -->
+    <target name="help">
+        <echo>
+Usage:
+    ant run                     - Run with default song (MaryHadALittleLamb.txt)
+    ant run -Dsong=songs/file.txt  - Run with specified song file
+    ant clean                   - Clean build files
+        </echo>
+    </target>
+</project>

@@ -22,6 +22,7 @@ public class Conductor implements Runnable {
     private final Map<Note, Member> choir = new HashMap<>();
     private List<BellNote> song;
     private boolean timeToWork = false;
+    private boolean songComplete = false;
 
     // instance method: parseNotes()
     private List<BellNote> parseNotes(String filename) {
@@ -67,8 +68,8 @@ public class Conductor implements Runnable {
     // instance method: parseNoteLength()
     private NoteLength parseNoteLength(String noteLength) {
         try {
-            int temp = Integer.parseInt(noteLength.strip());
-            return NoteLength.fromLength(1 / ((float) temp));
+            float temp = Float.parseFloat(noteLength.strip());
+            return NoteLength.fromLength(temp);
         } catch (IllegalArgumentException e) {
             System.err.println("Failed to parse note length: " + noteLength);
             return null;
@@ -96,7 +97,8 @@ public class Conductor implements Runnable {
         // thread.start(); // TODO: Implement run playSong integration
     }
 
-    private void stopThreads() {
+    private synchronized void stopThreads() {
+        // Wake up any waiting threads before stopping them
         for (Member m : choir.values()) {
             m.stopMember();
         }
@@ -106,24 +108,36 @@ public class Conductor implements Runnable {
         final AudioFormat af = new AudioFormat(Note.SAMPLE_RATE, 8, 1, true, false);
         Conductor conductor = new Conductor(af);
         List<BellNote> notes = null;
-        for (int i = 0; i < args.length; i++) {
-            switch (i) {
-                case 0:
-                    notes = conductor.parseNotes(args[i]);
-                    break;
-            }
+        System.out.println("First");
+        System.out.println(args[0]);
+        if (args.length > 0) {
+            notes = conductor.parseNotes(args[0]);
         }
-        // By default, load Mary had a little lamb
         if (notes == null) {
             notes = conductor.parseNotes("songs/MaryHadALittleLamb.txt");
         }
-        // conductor.assignParts(notes);
-
-        // conductor.startThreads();
-
         conductor.playSong();
-
+        
+        // Wait for the song to finish before stopping threads
+        try {
+            conductor.thread.join();
+        } catch (InterruptedException e) {
+            System.err.println("Main thread interrupted while waiting for conductor");
+        }
+        
         conductor.stopThreads();
+    }
+
+    public void stop() {
+        waitToStop();
+    }
+
+    private void waitToStop() {
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            System.err.println(thread.getName() + " stop malfunction");
+        }
     }
 
     public Conductor(AudioFormat af) {
@@ -142,30 +156,45 @@ public class Conductor implements Runnable {
             line.start();
 
             assignParts(song, line);
-
             startThreads();
 
             for (BellNote bn : song) {
                 Note note = bn.getNote();
                 Member player = choir.get(note);
                 synchronized (player) {
+                    if (!player.isPlaying()) break; // Exit if we've been asked to stop
+                    
                     player.setHasNewNote(true); // signal that a new note is waiting
                     player.notify();             // wake this member to process its note
                     try {
                         // Now wait until the member signals that it's done playing
-                        while (player.hasNewNote()) {
-                            player.wait();
+                        while (player.hasNewNote() && player.isPlaying()) {
+                            player.wait(1000); // Add timeout to prevent deadlock
+                            if (player.hasNewNote() && !player.isPlaying()) {
+                                // If we're stopping but thread has unprocessed note
+                                player.setHasNewNote(false);
+                                break;
+                            }
                         }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         System.err.println("Interrupted while waiting for player to finish.");
+                        break;
+                    }
+                }
+                synchronized (this) {
+                    try {
+                        Thread.sleep(80);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
             }
 
             line.drain();
-    } catch (LineUnavailableException e) {
-        System.err.println("playSong: The Audio System tried to read an unavailable line.");
+            songComplete = true;
+        } catch (LineUnavailableException e) {
+            System.err.println("playSong: The Audio System tried to read an unavailable line.");
         }
     }
 

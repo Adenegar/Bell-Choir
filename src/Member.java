@@ -33,7 +33,12 @@ public class Member implements Runnable {
     }
 
     public void stopMember() {
-        playing = false;
+        setPlaying(false);
+        // Wake up the thread if it's waiting
+        synchronized(this) {
+            this.notify();
+        }
+        waitToStop();
     }
 
     public void waitToStop() {
@@ -56,18 +61,28 @@ public class Member implements Runnable {
         return hasNewNote;
     }
 
+    public synchronized void setPlaying(boolean playing) {
+        this.playing = playing;
+    }
+    
+    public synchronized boolean isPlaying() {
+        return playing;
+    }
+
     @Override
     public void run() {
         synchronized (this) {
             try {
                 while (playing) {
-                    // Wait until a new note is assigned
+                    // Wait until a new note is assigned or we're asked to stop
                     while (!hasNewNote && playing) {
-                        this.wait();
+                        this.wait(500); // Add timeout to check playing flag periodically
                     }
                     if (!playing) break; // exit loop if stopped
-
-                    playNote();
+                    
+                    if (hasNewNote) { // Only play if there's actually a note to play
+                        playNote();
+                    }
                     
                     // Reset flag and notify conductor that this note has been played
                     hasNewNote = false;
@@ -75,6 +90,7 @@ public class Member implements Runnable {
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                System.out.println(thread.getName() + " was interrupted");
             }
         }
     }
@@ -85,7 +101,7 @@ public class Member implements Runnable {
             System.err.println("What's my line? Member was asked to play note when they have no song parts left");
             return;
         }
-        System.out.println("Thread: " + thread + " playing"); // Uncomment this line to show that different threads are playing
+        System.out.println(thread + " playing"); // Uncomment this line to show that different threads are playing
         BellNote note = new BellNote(this.note, nl);
         playNote(line, note);
     }

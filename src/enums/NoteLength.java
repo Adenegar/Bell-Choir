@@ -2,7 +2,9 @@ package enums;
 
 public enum NoteLength {
     WHOLE(1.0f),
+    DOTTEDHALF(0.75f),
     HALF(0.5f),
+    DOTTEDQUARTER(0.375f),
     QUARTER(0.25f),
     EIGTH(0.125f);
 

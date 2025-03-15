@@ -68,8 +68,14 @@ public class Conductor implements Runnable {
     // instance method: parseNoteLength()
     private NoteLength parseNoteLength(String noteLength) {
         try {
-            float temp = Float.parseFloat(noteLength.strip());
-            return NoteLength.fromLength(temp);
+            int temp = Integer.parseInt(noteLength.strip());
+            // Our program has custom support for dotted quarters and halves, we handle those here. 
+            if (temp == 3) {
+                return NoteLength.fromLength(0.75f);
+            } else if (temp == 6) {
+                return NoteLength.fromLength(0.375f);
+            }
+            return NoteLength.fromLength(1 / ((float) temp));
         } catch (IllegalArgumentException e) {
             System.err.println("Failed to parse note length: " + noteLength);
             return null;

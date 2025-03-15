@@ -1,44 +1,67 @@
 <project name="Music" default="compile" basedir=".">
     <!-- Define project properties -->
-    <property name="src.dir" value="src"/>
-    <property name="build.dir" value="build"/>
-    <property name="main.class" value="Conductor"/>
-    
+    <property name="src.dir" value="src" />
+    <property name="build.dir" value="build" />
+    <property name="classes.dir" value="${build.dir}/classes" />
+    <property name="songs.dir" value="songs" />
+    <property name="main.class" value="Conductor" />
+    <property name="test.class" value="ConductorTest" />
+
     <!-- Create song property with default value -->
-    <property name="song" value="songs/MaryHadALittleLamb.txt"/>
-    
-    <!-- Clean target to remove build directory -->
+    <property name="song" value="songs/MaryHadALittleLamb.txt" />
+
+    <!-- Clean target to remove build directories -->
     <target name="clean">
-        <delete dir="${build.dir}"/>
+        <delete dir="${build.dir}" />
     </target>
-    
-    <!-- Initialize target to create build directory -->
+
+    <!-- Initialize build directories -->
     <target name="init">
-        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.dir}" />
+        <mkdir dir="${classes.dir}" />
     </target>
-    
-    <!-- Compile target to compile source files -->
+
+    <!-- Compile the source files -->
     <target name="compile" depends="init">
-        <javac srcdir="${src.dir}" destdir="${build.dir}" includeantruntime="false"/>
-    </target>
-    
-    <!-- Run target that accepts a song parameter -->
-    <target name="run" depends="compile" description="Run the application with specified song">
-        <java classname="${main.class}" fork="true">
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false">
             <classpath>
-                <pathelement path="${build.dir}"/>
+                <!-- Add any additional libraries your project needs here -->
             </classpath>
-            <arg value="${song}"/>
+        </javac>
+        <!-- Copy any non-java resources if needed -->
+        <copy todir="${classes.dir}">
+            <fileset dir="${src.dir}" excludes="**/*.java" />
+        </copy>
+    </target>
+
+    <!-- Run the main program -->
+    <target name="run" depends="compile">
+        <java classname="${main.class}" fork="true" dir="${basedir}">
+            <classpath>
+                <pathelement location="${classes.dir}" />
+            </classpath>
+            <arg value="${song}" />
         </java>
     </target>
-    
+
+    <!-- Run the test program -->
+    <target name="test" depends="compile" description="Run the ConductorTest class">
+        <java classname="${test.class}" fork="true" dir="${basedir}">
+            <classpath>
+                <pathelement location="${classes.dir}" />
+                <!-- Include any test libraries if needed -->
+            </classpath>
+        </java>
+    </target>
+
     <!-- Help target to show usage information -->
     <target name="help">
         <echo>
-Usage:
-    ant run                     - Run with default song (MaryHadALittleLamb.txt)
-    ant run -Dsong=songs/file.txt  - Run with specified song file
-    ant clean                   - Clean build files
+            Usage:
+            ant run - Run with default song (MaryHadALittleLamb.txt)
+            ant run -Dsong=songs/file.txt - Run with specified song file
+            ant clean - Clean build files
+            ant test - Run the ConductorTest class
         </echo>
     </target>
 </project>

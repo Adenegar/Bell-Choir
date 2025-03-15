@@ -32,6 +32,9 @@ public class Conductor implements Runnable {
     /** Map of notes to their corresponding member threads */
     private final Map<Note, Member> choir = new HashMap<>();
 
+    /** How long to pause between notes, adding a staccato effect */
+    private final int STACCATO_PAUSE = 80;
+
     /** The sequence of notes that form the song to be played */
     private List<BellNote> song;
 
@@ -266,9 +269,9 @@ public class Conductor implements Runnable {
                 }
                 synchronized (this) {
                     try {
-                        Thread.sleep(80);
+                        Thread.sleep(STACCATO_PAUSE);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        System.err.println("Interrupted while pausing between notes (adding staccato effect).");
                     }
                 }
             }

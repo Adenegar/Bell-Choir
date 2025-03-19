@@ -8,7 +8,7 @@
     <property name="test.class" value="ConductorTest" />
 
     <!-- Create song property with default value -->
-    <property name="song" value="songs/MaryHadALittleLamb.txt" />
+    <property name="song" value="" />
 
     <!-- Clean target to remove build directories -->
     <target name="clean">

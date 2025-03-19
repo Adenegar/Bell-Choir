@@ -82,6 +82,12 @@ public class Conductor implements Runnable {
                 System.err.println("File " + filename + " exists, this should never happen");
             }
         } else {
+            // If the file is not found, try prepending the songs/ directory or adding .txt
+            if (!filename.startsWith("songs/")) {
+                return parseNotes("songs/" + filename);
+            } else if (!filename.endsWith(".txt")) {
+                return parseNotes(filename + ".txt");
+            }
             System.err.println("File: " + filename + " not found");
         }
         return null;
@@ -159,14 +165,22 @@ public class Conductor implements Runnable {
 
     /**
      * Stops all Member threads in the choir.
+     * Ensures clean shutdown by first signaling threads to stop,
+     * then waiting for them to complete any current operations.
      */
     private void stopThreads() {
-        // Wake up any waiting threads before stopping them
+        // First signal all threads to stop
         for (Member m : choir.values()) {
             m.stopMember();
+            // Wake up any waiting threads to process their stop signal
+            synchronized (m) {
+                m.notify();
+            }
         }
     }
 
+    // Fixed: Repeat playing bug
+    
     /**
      * Main entry point for the application.
      * Parses a song file and plays it.
@@ -180,11 +194,9 @@ public class Conductor implements Runnable {
         List<BellNote> notes = null;
         if (args != null && args.length > 0) {
             notes = conductor.parseNotes(args[0]);
-        } else { // If no arguments are passed in play Mary had a little lamb
-            notes = conductor.parseNotes("songs/MaryHadALittleLamb.txt");
         }
         if (notes == null) { // If we fail to read in our file, end the program. Some output should have been
-                             // printed for the user to fix errors.
+            System.err.println("Failed to read in notes. Pass in a file using argument -Dsong=[PATH_TO_SONG]");
             return;
         }
         conductor.playSong();

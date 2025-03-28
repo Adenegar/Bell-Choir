@@ -48,3 +48,14 @@ PlayThatSongBasic.txt:
 PlayThatSong.txt
 - Note support from C4 to G5
 - dotted quarter (txt representation: 6, note length: 0.375) and dotted half (txt representation: 3, note length: 0.75) support
+
+## Generating UML Diagrams
+
+To generate UML diagrams:
+
+1. Place the plantuml.jar file in the lib folder.
+2. Run the following command to generate an SVG of your UML diagram:
+
+   ```bash
+   java -jar lib/plantuml.jar -tsvg src/uml/UML_Diagram.puml
+   ```

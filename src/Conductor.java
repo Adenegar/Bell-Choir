@@ -35,6 +35,20 @@ public class Conductor implements Runnable {
     /** How long to pause between notes, adding a staccato effect */
     private final int STACCATO_PAUSE = 80;
 
+    // Add constants for dotted note lengths
+
+    /** Dotted half representation in txt files */
+    private static final int DOTTED_HALF_INPUT = 3;
+
+    /** Dotted quarter representation in txt files */
+    private static final int DOTTED_QUARTER_INPUT = 6;
+
+    /** Dotted half measure length */
+    private static final float DOTTED_HALF_LENGTH = 0.75f;
+
+    /** Dotted quarter measure length */
+    private static final float DOTTED_QUARTER_LENGTH = 0.375f;
+
     /** The sequence of notes that form the song to be played */
     private List<BellNote> song;
 
@@ -125,12 +139,10 @@ public class Conductor implements Runnable {
     private NoteLength parseNoteLength(String noteLength) {
         try {
             int temp = Integer.parseInt(noteLength.strip());
-            // Our program has custom support for dotted quarters and halves, we handle
-            // those here.
-            if (temp == 3) {
-                return NoteLength.fromLength(0.75f);
-            } else if (temp == 6) {
-                return NoteLength.fromLength(0.375f);
+            if (temp == DOTTED_HALF_INPUT) {
+                return NoteLength.fromLength(DOTTED_HALF_LENGTH);
+            } else if (temp == DOTTED_QUARTER_INPUT) {
+                return NoteLength.fromLength(DOTTED_QUARTER_LENGTH);
             }
             return NoteLength.fromLength(1 / ((float) temp));
         } catch (IllegalArgumentException e) {

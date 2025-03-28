@@ -77,41 +77,42 @@ public class ConductorTest {
     }
 
     /**
-     * Suppresses error output by redirecting System.err to a null output stream.
-     * This prevents error messages from appearing during tests.
+     * Suppresses error output during tests by redirecting System.err
+     * to a null output stream.
      */
     private static void suppressErrors() {
-        // Create a null output stream that discards all output
+        // Create a null output stream that discards error output.
         System.setErr(new PrintStream(new OutputStream() {
             public void write(int b) {
-                // Do nothing - this discards the output
+                // Discard the output.
             }
         }));
     }
 
     /**
-     * Restores normal error output by resetting System.err.
+     * Restores the original error output stream.
      */
     private static void restoreErrors() {
         System.setErr(originalErr);
     }
 
     /**
-     * Tests a single file to see if it can be parsed correctly.
+     * Tests a single song file to verify its parsing behavior.
      *
-     * @param filepath      The path to the file to test
-     * @param expectedValid Whether the file is expected to parse successfully
-     * @return True if the test result matches the expectation, false otherwise
+     * @param filepath      The absolute path to the test file.
+     * @param expectedValid Boolean indicating whether the file is expected to parse
+     *                      successfully.
+     * @return True if the test result matches the expected result, false otherwise.
      */
     private static boolean testFile(String filepath, boolean expectedValid) {
         try {
-            // Create a conductor instance
+            // Create a Conductor with a specified audio format.
             final AudioFormat af = new AudioFormat(Note.SAMPLE_RATE, 8, 1, true, false);
             Conductor conductor = new Conductor(af);
 
             List<BellNote> notes = conductor.parseNotes(filepath);
 
-            // If parseNotes returns null, the file is invalid; otherwise, it's valid
+            // A non-null 'notes' indicates the file was parsed successfully.
             boolean actualValid = (notes != null);
 
             System.out.println("Actual: " + (actualValid ? "Valid" : "Invalid"));

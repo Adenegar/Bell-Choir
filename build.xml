@@ -1,3 +1,5 @@
+<!-- build.xml generated largely from Github Copilot -->
+
 <project name="Music" default="compile" basedir=".">
     <!-- Define project properties -->
     <property name="src.dir" value="src" />

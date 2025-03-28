@@ -27,7 +27,7 @@ public class BellNote {
     /**
      * Gets the duration of this note.
      *
-     * @return The NoteLength enum value representing the duration
+     * @return The NoteLength representing the note's duration.
      */
     public NoteLength getLength() {
         return length;
@@ -36,7 +36,7 @@ public class BellNote {
     /**
      * Gets the pitch of this note.
      *
-     * @return The Note enum value representing the pitch
+     * @return The Note enum representing the pitch.
      */
     public Note getNote() {
         return note;

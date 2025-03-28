@@ -52,6 +52,11 @@ public class Conductor implements Runnable {
     public List<BellNote> parseNotes(String filename) {
         File file = new File(filename);
         if (file.exists()) {
+            // Check that the provided path is not a directory
+            if (file.isDirectory()) {
+                System.err.println("Provided path is a directory, not a valid file: " + filename);
+                return null;
+            }
             final List<BellNote> notes = new ArrayList<>();
             String line;
             String[] elements;
@@ -135,21 +140,22 @@ public class Conductor implements Runnable {
     }
 
     /**
-     * Assigns notes to the appropriate Member threads for playback.
-     * Creates new Member threads as needed.
+     * Assigns parts to Member threads using the shared SourceDataLine.
+     * This ensures consistent audio output from the same device.
      *
-     * @param notes The list of notes to assign
-     * @param line  The audio output line for playback
+     * @param notes List of BellNotes to be played.
+     * @param line  Shared SourceDataLine used for audio playback.
      */
     private void assignParts(List<BellNote> notes, SourceDataLine line) {
         for (BellNote bNote : notes) {
             Note note = bNote.getNote();
             Member m = choir.getOrDefault(note, null);
-
             if (m == null) {
+                // Create a new Member for this note if one does not already exist.
                 m = new Member(note, line);
                 choir.put(note, m);
             }
+            // Queue the note duration for playback.
             m.assignPart(bNote.getLength());
         }
     }
@@ -180,7 +186,7 @@ public class Conductor implements Runnable {
     }
 
     // Fixed: Repeat playing bug
-    
+
     /**
      * Main entry point for the application.
      * Parses a song file and plays it.
@@ -242,33 +248,38 @@ public class Conductor implements Runnable {
 
     /**
      * The main execution method for the conductor thread.
-     * Orchestrates the playback of notes by signaling Member threads at the right
-     * time.
+     * Opens the shared audio line, assigns notes to members, starts member threads,
+     * and signals each member to play the next note while applying a staccato
+     * pause.
      */
     @Override
     public void run() {
+        // Use try-with-resources so the SourceDataLine is automatically closed.
         try (final SourceDataLine line = AudioSystem.getSourceDataLine(af)) {
             line.open();
             line.start();
 
+            // Assign parts using the shared audio line.
             assignParts(song, line);
             startThreads();
 
+            // Signal each BellNote to the respective Member.
             for (BellNote bn : song) {
                 Note note = bn.getNote();
                 Member player = choir.get(note);
                 synchronized (player) {
                     if (!player.isPlaying())
-                        break; // Exit if we've been asked to stop
+                        break; // Exit if playback has been stopped.
 
-                    player.setHasNewNote(true); // signal that a new note is waiting
-                    player.notify(); // wake this member to process its note
+                    // Signal the member that a new note is ready.
+                    player.setHasNewNote(true);
+                    player.notify();
                     try {
-                        // Now wait until the member signals that it's done playing
+                        // Wait until the member finishes playing the note.
                         while (player.hasNewNote() && player.isPlaying()) {
-                            player.wait(1000); // Add timeout to prevent deadlock
+                            player.wait(1000); // Timeout to avoid potential deadlock.
                             if (player.hasNewNote() && !player.isPlaying()) {
-                                // If we're stopping but thread has unprocessed note
+                                // If stopping mid-note, clear the new note flag.
                                 player.setHasNewNote(false);
                                 break;
                             }
@@ -279,15 +290,17 @@ public class Conductor implements Runnable {
                         break;
                     }
                 }
+                // Apply a short pause between notes to simulate staccato.
                 synchronized (this) {
                     try {
                         Thread.sleep(STACCATO_PAUSE);
                     } catch (InterruptedException e) {
-                        System.err.println("Interrupted while pausing between notes (adding staccato effect).");
+                        System.err.println("Interrupted while pausing between notes (staccato effect).");
                     }
                 }
             }
 
+            // Ensure all queued audio is processed.
             line.drain();
         } catch (LineUnavailableException e) {
             System.err.println("playSong: The Audio System tried to read an unavailable line.");

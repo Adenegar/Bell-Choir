@@ -1,0 +1,49 @@
+@startuml
+
+class BellNote {
+  - note: Note
+  - length: NoteLength
+  + BellNote(note: Note, length: NoteLength)
+  + getNote(): Note
+  + getLength(): NoteLength
+}
+
+class Conductor {
+  - af: AudioFormat
+  - thread: Thread
+  - choir: Map<Note, Member>
+  - song: List<BellNote>
+  - STACCATO_PAUSE: int
+  + Conductor(af: AudioFormat)
+  + parseNotes(filename: String): List<BellNote>
+  + playSong(): void
+  + run(): void
+  + main(args: String[]): void
+}
+
+class Member {
+  - songParts: List<NoteLength>
+  - note: Note
+  - thread: Thread
+  - line: SourceDataLine
+  - playing: boolean
+  - hasNewNote: boolean
+  + Member(note: Note, line: SourceDataLine)
+  + startMember(): void
+  + stopMember(): void
+  + assignPart(nl: NoteLength): void
+  + run(): void
+}
+
+class ConductorTest {
+  - TEST_DIR: String
+  + main(args: String[]): void
+  - runAllTests(): void
+  - testFile(filepath: String, expectedValid: boolean): boolean
+}
+
+Conductor --> BellNote : uses
+Conductor --> Member : manages
+ConductorTest ..> Conductor : tests
+
+@enduml

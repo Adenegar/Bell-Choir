@@ -132,18 +132,19 @@ public class Member implements Runnable {
         synchronized (this) {
             try {
                 while (playing) {
-                    // Wait until a new note is assigned or we're asked to stop
+                    // Wait until a new note is signaled or a stop request occurs.
                     while (!hasNewNote && playing) {
-                        this.wait(500); // Add timeout to check playing flag periodically
+                        // Timeout ensures periodic check for the playing state.
+                        this.wait(500);
                     }
                     if (!playing)
-                        break; // exit loop if stopped
+                        break; // Exit loop if playback has been stopped.
 
-                    if (hasNewNote) { // Only play if there's actually a note to play
+                    if (hasNewNote) { // Process the new note.
                         playNote();
                     }
 
-                    // Reset flag and notify conductor that this note has been played
+                    // Reset the flag and notify any thread waiting for the note to complete.
                     hasNewNote = false;
                     this.notify();
                 }
@@ -155,8 +156,8 @@ public class Member implements Runnable {
     }
 
     /**
-     * Plays the next note in the queue.
-     * Removes the first note from the queue and plays it.
+     * Plays the next note from the queue.
+     * Removes the first note from songParts, constructs a BellNote and plays it.
      */
     private void playNote() {
         NoteLength nl = songParts.remove(0);
@@ -164,21 +165,25 @@ public class Member implements Runnable {
             System.err.println("What's my line? Member was asked to play note when they have no song parts left");
             return;
         }
-        System.out.println(thread + " playing"); // Uncomment this line to show that different threads are playing
+        // Debug log to show which thread is playing.
+        System.out.println(thread + " playing");
         BellNote note = new BellNote(this.note, nl);
         playNote(line, note);
     }
 
     /**
-     * Plays a specific BellNote using the provided audio line.
+     * Writes the audio data for the BellNote to the output line.
+     * Plays the note followed by a short rest to simulate a staccato pause.
      *
-     * @param line The audio output line
-     * @param bn   The BellNote to play
+     * @param line The SourceDataLine to write audio data.
+     * @param bn   The BellNote to play.
      */
     private void playNote(SourceDataLine line, BellNote bn) {
         final int ms = Math.min(bn.getLength().timeMs(), Note.MEASURE_LENGTH_SEC * 1000);
         final int length = Note.SAMPLE_RATE * ms / 1000;
+        // Write the note samples.
         line.write(bn.getNote().sample(), 0, length);
+        // Add a short rest after playing the note.
         line.write(Note.REST.sample(), 0, 50);
     }
 }

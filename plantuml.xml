@@ -1,0 +1,21 @@
+<project name="PlantUML" default="generate-diagrams" basedir=".">
+    <!-- Define property for the PlantUML jar location -->
+    <property name="plantuml.jar" value="lib/plantuml.jar" />
+    
+    <!-- Define the PlantUML task -->
+    <taskdef name="plantuml" classname="net.sourceforge.plantuml.ant.PlantUmlTask">
+        <classpath>
+            <pathelement location="${plantuml.jar}" />
+        </classpath>
+    </taskdef>
+    
+    <!-- Target to generate UML diagrams -->
+    <target name="generate-diagrams">
+        <!-- Ensure the output directory exists -->
+        <mkdir dir="diagrams" />
+        <!-- Modified plantuml task: replaced 'source' and 'out' with a nested fileset and 'destdir' -->
+        <plantuml destdir="docs" format="png">
+            <fileset dir="src/uml" includes="**/*.puml" />
+        </plantuml>
+    </target>
+</project>
